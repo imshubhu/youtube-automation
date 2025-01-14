@@ -25,7 +25,7 @@ const youtube = google.youtube({
 
 async function uploadVideo(name, title) {
     try {
-        const videoPath = path.resolve(__dirname, `${name}.mp4`); // Path to your video file
+        const videoPath = path.resolve(__dirname, name); // Path to your video file
         const videoFileSize = fs.statSync(videoPath).size;
 
         const requestParameters = {

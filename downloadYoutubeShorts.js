@@ -4,6 +4,7 @@ const ytdl = require('ytdl-core');
 async function downloadYouTubeShorts(name, url) {
     try {
         // Validate the URL
+        console.log('url', url)
         if (!ytdl.validateURL(url)) {
             console.log('Invalid YouTube URL');
             return { success: false };
@@ -14,11 +15,21 @@ async function downloadYouTubeShorts(name, url) {
         // const videoTitle = videoInfo.videoDetails.title.replace(/[<>:"/\\|?*]/g, ''); // Sanitize filename
 
         console.log(`Downloading: ${name}`);
+        const format = ytdl.chooseFormat(videoInfo.formats, {
+            filter: "audioandvideo",
+            quality: "highest",
+        });
+        console.log('Format found!', format);
 
         // Download video
         const outputPath = `${name}.mp4`;
         const process = await new Promise((resolve, reject) => {
-            ytdl(url, { quality: 'highestvideo' })
+
+            ytdl.downloadFromInfo(videoInfo, {
+                quality: format.itag
+            })
+
+            ytdl(url, { quality: '18' })
                 .pipe(fs.createWriteStream(outputPath))
                 .on('finish', () => {
                     console.log(`Download completed: ${outputPath}`);

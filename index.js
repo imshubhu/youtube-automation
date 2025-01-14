@@ -12,7 +12,8 @@ const downloadYouTubeShorts = require('./downloadYoutubeShorts');
 const generateYouTubeMetadata = require('./generateMetaData');
 const uploadVideo = require('./add_video_on_youtube');
 const path = require('path')
-const fs = require('fs')
+const fs = require('fs');
+const downloadAndMerge = require('./downloadAndMergeYoutubeShorts');
 
 connectDB()
 
@@ -25,7 +26,7 @@ app.get('/push', async (req, res) => {
             description: 'Ho Gaya Tumse Pyar Sun Le || Aesthetic 🍁🍂 || WhatsApp status ❤️ || #shorts',
             created_at: '2025-01-31T06:21:21.449+00:00'
         }
-        
+
         await Youtube.create({
             ...data
         })
@@ -36,7 +37,7 @@ app.get('/push', async (req, res) => {
     }
 })
 
-app.get('/fetch', async(req, res) => {
+app.get('/fetch', async (req, res) => {
     // await Youtube.create({
     //     name: 'Yeh Tune Kya Kiya Song',
     //     url: 'https://youtube.com/shorts/oeSjd9v4ZNg?si=qWYwV9_pspC_Wqo8',
@@ -50,7 +51,7 @@ app.get('/fetch', async(req, res) => {
     endOfDay.setHours(23, 59, 59, 999);
     let data = await Youtube.find({ created_at: { $gte: startOfDay, $lte: endOfDay } })
 
-    if(data.length){
+    if (data.length) {
         let { name, url, description } = data[0]
         // await downloadYouTubeShorts(name, url)
         // const metadata = await generateYouTubeMetadata(name, 'Young and old audenince both', ['shorts', 'viral', 'fun', 'entertainment']);
@@ -63,20 +64,21 @@ app.get('/fetch', async(req, res) => {
     res.send(data)
 })
 
-app.get('/youtube', async(req, res) => {
+app.get('/youtube', async (req, res) => {
     try {
         const startOfDay = new Date();
         startOfDay.setHours(0, 0, 0, 0);
-    
+
         const endOfDay = new Date();
         endOfDay.setHours(23, 59, 59, 999);
         let data = await Youtube.find({ created_at: { $gte: startOfDay, $lte: endOfDay } })
-        if(data.length){
+        if (data.length) {
             let { name, url, description } = data[0]
-            const download_response = await downloadYouTubeShorts(name, url)
-            if(download_response?.success){
-                await uploadVideo(name, description)
-                deleteFile(`${name}.mp4`)
+            const download_response = await downloadAndMerge(name, url)
+            console.log(download_response)
+            if (download_response?.success) {
+                await uploadVideo(download_response.file, description)
+                deleteFile(download_response.file)
             }
         }
         res.send('success')
@@ -96,19 +98,20 @@ cron.schedule('* * * * *', () => {
     fetch('https://youtube-automation-bvr3.onrender.com')
 })
 
-cron.schedule('0 8 * * *', async() => {
+cron.schedule('0 8 * * *', async () => {
     const startOfDay = new Date();
     startOfDay.setHours(0, 0, 0, 0);
 
     const endOfDay = new Date();
     endOfDay.setHours(23, 59, 59, 999);
     let data = await Youtube.find({ created_at: { $gte: startOfDay, $lte: endOfDay } })
-    if(data.length){
+    if (data.length) {
         let { name, url, description } = data[0]
-        const download_response = await downloadYouTubeShorts(name, url)
-        if(download_response?.success){
-            await uploadVideo(name, description)
-            deleteFile(`${name}.mp4`)
+        const download_response = await downloadAndMerge(name, url)
+        console.log(download_response)
+        if (download_response?.success) {
+            await uploadVideo(download_response.file, description)
+            deleteFile(download_response.file)
         }
     }
     console.log('running a task every 10 minute', data);
