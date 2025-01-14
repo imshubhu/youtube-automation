@@ -11,9 +11,30 @@ const Youtube = require('./youtubeSchema');
 const downloadYouTubeShorts = require('./downloadYoutubeShorts');
 const generateYouTubeMetadata = require('./generateMetaData');
 const uploadVideo = require('./add_video_on_youtube');
-
+const path = require('path')
+const fs = require('fs')
 
 connectDB()
+
+app.get('/push', async (req, res) => {
+    try {
+
+        const data = {
+            name: 'Ho Gaya Tumse',
+            url: 'https://youtube.com/shorts/cZLum6irRJs?si=okMggX5GDV4LW9I3',
+            description: 'Ho Gaya Tumse Pyar Sun Le || Aesthetic 🍁🍂 || WhatsApp status ❤️ || #shorts',
+            created_at: '2025-01-31T06:21:21.449+00:00'
+        }
+        
+        await Youtube.create({
+            ...data
+        })
+
+        res.status(200).send('okay')
+    } catch (error) {
+        res.status(400).send(error)
+    }
+})
 
 app.get('/fetch', async(req, res) => {
     // await Youtube.create({
@@ -42,10 +63,38 @@ app.get('/fetch', async(req, res) => {
     res.send(data)
 })
 
+app.get('/youtube', async(req, res) => {
+    try {
+        const startOfDay = new Date();
+        startOfDay.setHours(0, 0, 0, 0);
+    
+        const endOfDay = new Date();
+        endOfDay.setHours(23, 59, 59, 999);
+        let data = await Youtube.find({ created_at: { $gte: startOfDay, $lte: endOfDay } })
+        if(data.length){
+            let { name, url, description } = data[0]
+            const download_response = await downloadYouTubeShorts(name, url)
+            if(download_response?.success){
+                await uploadVideo(name, description)
+                deleteFile(`${name}.mp4`)
+            }
+        }
+        res.send('success')
+    } catch (error) {
+        console.log('youtube error', error)
+        res.status(500).send({ success: false, error: error.message })
+    }
+})
+
 app.get('/', (req, res) => {
     res.send('Backend is running')
 })
 
+
+cron.schedule('* * * * *', () => {
+    console.log('call every minute')
+    fetch('https://youtube-automation-bvr3.onrender.com')
+})
 
 cron.schedule('0 8 * * *', async() => {
     const startOfDay = new Date();
