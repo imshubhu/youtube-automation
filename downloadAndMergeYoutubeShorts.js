@@ -132,7 +132,17 @@ async function downloadAndMergeFromData(name, data) {
             let progressbarHandle = setInterval(showProgress, 1000);
 
             // FFmpeg process
-            const ffmpegProcess = cp.spawn(ffmpeg, [
+            // const ffmpegProcess = cp.spawn(ffmpeg, [
+            //     '-loglevel', '8', '-hide_banner',
+            //     '-progress', 'pipe:3',
+            //     '-i', bestAudio.url,
+            //     '-i', bestVideo.url,
+            //     '-map', '0:a', '-map', '1:v',
+            //     '-c:v', 'copy',
+            //     `${name}.mkv`
+            // ], { windowsHide: true, stdio: ['inherit', 'inherit', 'inherit', 'pipe'] });
+
+            const ffmpegProcess = cp.spawn('ffmpeg', [
                 '-loglevel', '8', '-hide_banner',
                 '-progress', 'pipe:3',
                 '-i', bestAudio.url,
@@ -140,7 +150,8 @@ async function downloadAndMergeFromData(name, data) {
                 '-map', '0:a', '-map', '1:v',
                 '-c:v', 'copy',
                 `${name}.mkv`
-            ], { windowsHide: true, stdio: ['inherit', 'inherit', 'inherit', 'pipe'] });
+            ], { stdio: ['ignore', 'pipe', 'pipe', 'pipe'], windowsHide: true });
+            
 
             ffmpegProcess.stdio[3].on('data', chunk => {
                 const lines = chunk.toString().trim().split('\n');
@@ -161,6 +172,13 @@ async function downloadAndMergeFromData(name, data) {
                     reject(new Error(`FFmpeg process exited with code ${code}`));
                 }
             });
+
+            ffmpegProcess.on('error', (err) => {
+                clearInterval(progressbarHandle);
+                console.error('FFmpeg process failed to start:', err);
+                reject(err);
+            });
+            
 
         } catch (error) {
             reject(error);
