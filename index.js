@@ -8,12 +8,11 @@ console.log(process.env.CLIENT_ID)
 const connectDB = require("./db");
 const cron = require('node-cron');
 const Youtube = require('./youtubeSchema');
-const downloadYouTubeShorts = require('./downloadYoutubeShorts');
-const generateYouTubeMetadata = require('./generateMetaData');
 const uploadVideo = require('./add_video_on_youtube');
 const path = require('path')
 const fs = require('fs');
 const downloadAndMerge = require('./downloadAndMergeYoutubeShorts');
+const fetch = require('node-fetch');
 
 connectDB()
 
@@ -37,32 +36,46 @@ app.get('/push', async (req, res) => {
     }
 })
 
-app.get('/fetch', async (req, res) => {
-    // await Youtube.create({
-    //     name: 'Yeh Tune Kya Kiya Song',
-    //     url: 'https://youtube.com/shorts/oeSjd9v4ZNg?si=qWYwV9_pspC_Wqo8',
-    //     description: 'Yeh Tune Kya Kiya Song ❤🕊️ ~ Lyrics Slowed Reverb Song | Aesthetic Status | #shorts #aesthetic #song'
-    // })
-    // Get start and end of today
-    const startOfDay = new Date();
-    startOfDay.setHours(0, 0, 0, 0);
+app.get('/third-youtube', async (req, res) => {
+    const url = 'https://ytstream-download-youtube-videos.p.rapidapi.com/dl?id=NcfX3HjmooU';
+    const options = {
+        method: 'GET',
+        headers: {
+            'x-rapidapi-key': '7baf2dc25bmshb57c755427fb792p117878jsne9a78d65f9c6',
+            'x-rapidapi-host': 'ytstream-download-youtube-videos.p.rapidapi.com'
+        }
+    };
 
-    const endOfDay = new Date();
-    endOfDay.setHours(23, 59, 59, 999);
-    let data = await Youtube.find({ created_at: { $gte: startOfDay, $lte: endOfDay } })
-
-    if (data.length) {
-        let { name, url, description } = data[0]
-        // await downloadYouTubeShorts(name, url)
-        // const metadata = await generateYouTubeMetadata(name, 'Young and old audenince both', ['shorts', 'viral', 'fun', 'entertainment']);
-
-        // if (metadata) {
-        //     console.log('Generated Metadata:', metadata);
-        // }
+    try {
+        const response = await fetch(url, options);
+        const result = await response.json();
+        await downloadAndMerge.downloadAndMergeFromData('outout', result.adaptiveFormats)
+        res.send(result)
+    } catch (error) {
+        console.error(error);
+        res.send(error)
     }
-
-    res.send(data)
 })
+
+async function fetchYoutubeDetails(id) {
+    const url = `https://ytstream-download-youtube-videos.p.rapidapi.com/dl?id=${id}`;
+    const options = {
+        method: 'GET',
+        headers: {
+            'x-rapidapi-key': '7baf2dc25bmshb57c755427fb792p117878jsne9a78d65f9c6',
+            'x-rapidapi-host': 'ytstream-download-youtube-videos.p.rapidapi.com'
+        }
+    };
+
+    try {
+        const response = await fetch(url, options);
+        const result = await response.json();
+        return result.adaptiveFormats
+    } catch (error) {
+        console.error(error);
+        return error.message
+    }
+}
 
 app.get('/youtube', async (req, res) => {
     try {
@@ -74,10 +87,12 @@ app.get('/youtube', async (req, res) => {
         let data = await Youtube.find({ created_at: { $gte: startOfDay, $lte: endOfDay } })
         if (data.length) {
             let { name, url, description } = data[0]
-            const download_response = await downloadAndMerge(name, url)
+            let result = await fetchYoutubeDetails(url)
+            const download_response = await downloadAndMerge.downloadAndMergeFromData(name, result)
             console.log(download_response)
             if (download_response?.success) {
-                await uploadVideo(download_response.file, description)
+                console.log('name', name, description)
+                await uploadVideo(download_response.file, name, description)
                 deleteFile(download_response.file)
             }
         }
@@ -107,10 +122,12 @@ cron.schedule('0 8 * * *', async () => {
     let data = await Youtube.find({ created_at: { $gte: startOfDay, $lte: endOfDay } })
     if (data.length) {
         let { name, url, description } = data[0]
-        const download_response = await downloadAndMerge(name, url)
+        let result = await fetchYoutubeDetails(url)
+        const download_response = await downloadAndMerge.downloadAndMergeFromData(name, result)
         console.log(download_response)
         if (download_response?.success) {
-            await uploadVideo(download_response.file, description)
+            console.log('name', name, description)
+            await uploadVideo(download_response.file, name, description)
             deleteFile(download_response.file)
         }
     }

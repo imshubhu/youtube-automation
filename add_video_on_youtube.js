@@ -10,7 +10,7 @@ const REDIRECT_URI = process.env.REDIRECT_URI; // E.g., http://localhost:3000/oa
 // Replace with your refresh token (generated once using OAuth flow)
 const REFRESH_TOKEN = process.env.REFRESH_TOKEN;
 
-const oauth2Client = new google.auth.OAuth2(
+const oauth2Client = new google.auth.OAuth2(    
     CLIENT_ID,
     CLIENT_SECRET,
     REDIRECT_URI
@@ -34,7 +34,7 @@ async function uploadVideo(name, title) {
                 snippet: {
                     title: title,
                     description: title,
-                    tags: [`${name} lyrics`, 'lyrics video', 'shorts lyrics', 'music lyrics', 'song lyrics', 'lyrics video shorts', 'viral lyrics video', 'fun lyrics', 'entertainment lyrics', 'trending lyrics video', 'pop lyrics'], // Optional
+                    tags: [`${name.split(".")[0]} lyrics`, 'lyrics video', 'shorts lyrics', 'music lyrics', 'song lyrics', 'lyrics video shorts', 'viral lyrics video', 'fun lyrics', 'entertainment lyrics', 'trending lyrics video', 'pop lyrics'], // Optional
                     categoryId: '10', // Category ID (e.g., 22 for People & Blogs)
                 },
                 status: {
