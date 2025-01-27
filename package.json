@@ -21,6 +21,7 @@
     "node-cron": "^3.0.3",
     "nodemon": "^3.1.9",
     "openai": "^4.78.1",
+    "youtube-dl-exec": "^3.0.13",
     "ytdl-core": "npm:@distube/ytdl-core@^4.15.8"
   }
 }
