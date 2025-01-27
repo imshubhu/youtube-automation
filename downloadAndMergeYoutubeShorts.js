@@ -178,7 +178,7 @@ async function downloadAndMerge(name, url) {
 //     });
 // }
 
-async function downloadAndMergeFromData(name, data) {
+async function downloadAndMergeFromData(name, data, retries = 3) {
     return new Promise((resolve, reject) => {
         try {
             // Validate the input data
@@ -206,6 +206,7 @@ async function downloadAndMergeFromData(name, data) {
             // Track progress
             ffmpeg()
                 .input(bestAudio.url)
+                .inputOptions('-headers', 'User-Agent: Mozilla/5.0')
                 .input(bestVideo.url)
                 .outputOptions([
                     '-map 0:a', // Map the audio from the first input
@@ -218,8 +219,12 @@ async function downloadAndMergeFromData(name, data) {
                 .on('progress', (progress) => {
                     console.log(`Processing: ${progress.percent ? progress.percent.toFixed(2) : 0}% done`);
                 })
-                .on('error', (err) => {
+                .on('error', async (err) => {
                     console.error('FFmpeg process error:', err.message);
+                    if (retries > 0) {
+                        console.log('Retrying due to FFmpeg error:', err.message);
+                        return resolve(await downloadAndMergeFromData(name, data, retries - 1));
+                    }
                     reject(new Error(`FFmpeg process error: ${err.message}`));
                 })
                 .on('end', () => {
