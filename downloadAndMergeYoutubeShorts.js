@@ -1,8 +1,9 @@
 const cp = require('child_process');
 const readline = require('readline');
 const ytdl = require('ytdl-core');
-// const ffmpeg = require('ffmpeg-static');
+const ffmpegPath = require('ffmpeg-static');
 const ffmpeg = require('fluent-ffmpeg');
+ffmpeg.setFfmpegPath(ffmpegPath);
 const path = require('path');
 
 async function downloadAndMerge(name, url) {
@@ -201,7 +202,8 @@ async function downloadAndMergeFromData(name, data, retries = 3) {
             console.log(`Best Audio URL: ${bestAudio.url}`);
             console.log(`Best Video URL: ${bestVideo.url}`);
 
-            const outputFile = path.join(__dirname, `${name}.mkv`);
+            // const outputFile = path.join(__dirname, `${name}.mkv`);
+            const outputFile = path.join('/tmp', `${name}.mkv`);
 
             // Track progress
             ffmpeg()
