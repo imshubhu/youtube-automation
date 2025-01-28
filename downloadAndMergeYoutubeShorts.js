@@ -1,9 +1,9 @@
 const cp = require('child_process');
 const readline = require('readline');
 const ytdl = require('ytdl-core');
-const ffmpegPath = require('ffmpeg-static');
+// const ffmpegPath = require('ffmpeg-static');
 const ffmpeg = require('fluent-ffmpeg');
-ffmpeg.setFfmpegPath(ffmpegPath);
+// ffmpeg.setFfmpegPath(ffmpegPath);
 const path = require('path');
 
 async function downloadAndMerge(name, url) {
@@ -213,7 +213,9 @@ async function downloadAndMergeFromData(name, data, retries = 3) {
                 .outputOptions([
                     '-map 0:a', // Map the audio from the first input
                     '-map 1:v', // Map the video from the second input
-                    '-c:v copy' // Copy video codec without re-encoding
+                    // '-c:v copy' // Copy video codec without re-encoding
+                    '-c:v libx264',  // Re-encode video to lower memory usage
+                    '-preset ultrafast', // Fast encoding to reduce memory usage
                 ])
                 .on('start', (cmd) => {
                     console.log(`FFmpeg process started with command: ${cmd}`);
